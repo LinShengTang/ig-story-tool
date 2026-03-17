@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AK IG 限動一鍵生成器 v2</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;margin:0;background:#111827;color:#f9fafb}
+.wrap{max-width:980px;margin:0 auto;padding:20px}
+h1{margin:0 0 8px;font-size:28px}
+.sub{color:#cbd5e1;line-height:1.6;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:16px}
+.card{background:#1f2937;border:1px solid #374151;border-radius:16px;padding:16px}
+label{display:block;margin:0 0 6px;color:#cbd5e1;font-size:13px}
+input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #4b5563;background:#111827;color:#fff;margin-bottom:12px}
+button{padding:11px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+.primary{background:#60a5fa;color:#0b1220}
+.secondary{background:#374151;color:#fff}
+.story{background:#111827;border:1px solid #374151;border-radius:14px;padding:14px;margin-bottom:12px}
+.badge{display:inline-block;font-size:12px;padding:5px 8px;border-radius:999px;background:#1d4ed8;color:#fff;margin-bottom:8px}
+.story-text{white-space:pre-wrap;line-height:1.7}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.note{font-size:12px;color:#cbd5e1;margin-top:12px;line-height:1.6}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AK IG 限動一鍵生成器 v2</h1>
+  <div class="sub">輸入人設、客群、主題後，按一下就生成 5 則限動。這版改成更穩定的純前端版本。</div>
+
+  <div class="grid">
+    <div class="card">
+      <label>你的定位 / 人設</label>
+      <input id="persona" value="正在經營美安、重視健康與自我成長的分享者">
+
+      <label>主要客群</label>
+      <input id="audience" value="25–45 歲上班族女性，常覺得累、忙、沒時間照顧自己">
+
+      <label>今日主題</label>
+      <input id="topic" value="疲勞、作息、健康管理">
+
+      <label>語氣</label>
+      <select id="tone">
+        <option>自然真誠</option>
+        <option>溫柔陪伴</option>
+        <option>專業可信</option>
+        <option>輕鬆朋友感</option>
+        <option>激勵行動</option>
+      </select>
+
+      <label>CTA 強度</label>
+      <select id="cta">
+        <option>輕</option>
+        <option>中</option>
+        <option>強</option>
+      </select>
+
+      <div class="actions">
+        <button class="primary" id="generateBtn">一鍵生成 5 則</button>
+        <button class="secondary" id="copyAllBtn">複製全部</button>
+      </div>
+
+      <div class="note">若在 ChatGPT 內預覽時按鈕仍無法互動，請先下載後用 Safari / Chrome 開啟。</div>
+    </div>
+
+    <div class="card">
+      <div id="output"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var banks = {
+    openers: [
+      "今天突然很有感",
+      "這陣子一直在想一件事",
+      "我最近慢慢發現",
+      "以前我真的沒想過",
+      "今天忙完之後特別有感"
+    ],
+    life: [
+      "其實很多人不是不努力，是每天都在硬撐。",
+      "以前我也常把疲累當成正常，後來才知道那不該是日常。",
+      "最近在調整作息後，才發現狀態真的會差很多。",
+      "每天事情很多，但身體給的訊號其實都很誠實。"
+    ],
+    pain: [
+      "很多人白天正常上班，晚上卻只想放空，連照顧自己都沒力氣。",
+      "最累的不是忙，而是你明明很累，卻還得繼續扛。",
+      "你有沒有也遇過：明明睡了，醒來還是很重。",
+      "很多人不是懶，是長期把自己放到最後。"
+    ],
+    knowledge: [
+      "真正有效的健康管理，不是撐到出問題才補救，而是提早調整。",
+      "比起亂補一堆，先弄清楚自己的狀態跟需求，反而比較重要。",
+      "很多人追求效率，卻忘了狀態才是效率的底盤。",
+      "身體的感受通常不會騙人，真正重要的是你有沒有開始正視它。"
+    ],
+    story: [
+      "我以前也覺得這些事情可有可無，直到有一天發現自己真的不像以前那樣了。",
+      "以前的我，很常把「再撐一下」掛在嘴邊，結果一撐就是好久。",
+      "我不是一開始就懂這些，而是跌跌撞撞後，才慢慢找到比較適合自己的方式。",
+      "我後來才知道，照顧自己不是奢侈，是基本。"
+    ],
+    ctaLight: [
+      "如果你最近也有這種感覺，可以跟我說，我把我現在怎麼調整的方式整理給你。",
+      "最近很多人都在問我怎麼開始注意這些，有興趣我可以慢慢分享。"
+    ],
+    ctaMid: [
+      "如果你也有類似狀況，私訊我「調整」，我把我現在用的思路分享給你。",
+      "想知道我最近怎麼做健康管理的，可以直接跟我聊，我不會硬推。"
+    ],
+    ctaStrong: [
+      "如果你已經受夠現在這種狀態，直接私訊我「想改變」，我跟你說我怎麼開始。",
+      "你若真的想開始調整自己，跟我說一聲，我帶你從最簡單的第一步開始。"
+    ]
+  };
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function toneLine(tone) {
+    var map = {
+      "自然真誠": "我想用最真實的方式分享，不想講得太像廣告。",
+      "溫柔陪伴": "不是要你立刻改變，而是想陪你慢慢調整。",
+      "專業可信": "我後來發現，有系統地看待狀態，比亂試更重要。",
+      "輕鬆朋友感": "先從最簡單的一步開始，真的不用太有壓力。",
+      "激勵行動": "有些事情不用等完美，先開始照顧自己就對了。"
+    };
+    return map[tone] || "";
+  }
+
+  function ctaText(level) {
+    if (level === "中") return pick(banks.ctaMid);
+    if (level === "強") return pick(banks.ctaStrong);
+    return pick(banks.ctaLight);
+  }
+
+  function buildStories() {
+    var audience = document.getElementById("audience").value.trim();
+    var topic = document.getElementById("topic").value.trim();
+    var tone = document.getElementById("tone").value;
+    var cta = document.getElementById("cta").value;
+
+    return [
+      {title:"生活 / 破防禦", text: pick(banks.openers) + "\n" + pick(banks.life) + "\n\n我現在會提醒自己：先把狀態顧好，很多事情才有餘裕處理。"},
+      {title:"痛點 / 引共鳴", text: "給 " + audience + " 的一句話：\n" + pick(banks.pain) + "\n\n有時候你不是不夠好，只是太久沒有照顧自己。"},
+      {title:"知識 / 建專業", text: "今天關於「" + topic + "」我最想分享的是：\n" + pick(banks.knowledge) + "\n\n" + toneLine(tone)},
+      {title:"故事 / 建信任", text: pick(banks.story) + "\n\n我現在做的，不只是分享產品，而是想把自己一路摸索過的東西，整理成更好懂的方法。"},
+      {title:"CTA / 引私訊", text: ctaText(cta)}
+    ];
+  }
+
+  function render() {
+    var output = document.getElementById("output");
+    var stories = buildStories();
+    output.innerHTML = "";
+    for (var i = 0; i < stories.length; i++) {
+      var story = stories[i];
+      var box = document.createElement("div");
+      box.className = "story";
+
+      var badge = document.createElement("div");
+      badge.className = "badge";
+      badge.textContent = story.title;
+
+      var text = document.createElement("div");
+      text.className = "story-text";
+      text.textContent = story.text;
+
+      var row = document.createElement("div");
+      row.className = "actions";
+
+      var copyBtn = document.createElement("button");
+      copyBtn.className = "secondary";
+      copyBtn.textContent = "複製這則";
+      copyBtn.setAttribute("data-text", story.text);
+      copyBtn.addEventListener("click", function (e) {
+        var t = e.target.getAttribute("data-text");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(t).then(function(){ alert("已複製"); }).catch(function(){ alert("此環境不支援剪貼簿，請手動複製"); });
+        } else {
+          alert("此環境不支援剪貼簿，請手動複製");
+        }
+      });
+
+      row.appendChild(copyBtn);
+      box.appendChild(badge);
+      box.appendChild(text);
+      box.appendChild(row);
+      output.appendChild(box);
+    }
+  }
+
+  function copyAll() {
+    var stories = buildStories();
+    var text = stories.map(function(s, idx){
+      return "【限動 " + (idx + 1) + "】\n" + s.text;
+    }).join("\n\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ alert("已複製全部 5 則"); }).catch(function(){ alert("此環境不支援剪貼簿，請手動複製"); });
+    } else {
+      alert("此環境不支援剪貼簿，請手動複製");
+    }
+  }
+
+  document.getElementById("generateBtn").addEventListener("click", render);
+  document.getElementById("copyAllBtn").addEventListener("click", copyAll);
+  render();
+})();
+</script>
+</body>
+</html>
